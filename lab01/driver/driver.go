@@ -145,3 +145,46 @@ func (d *Driver) Equals(other *Driver) bool {
 		d.middleName == other.middleName &&
 		d.experience == other.experience
 }
+
+//8
+//----------------------------------------------------------------------------
+// --- Пункт 8: Краткая версия сущности Водитель ---
+
+type DriverShort struct {
+	id       int
+	lastName string
+	initials string
+}
+
+func NewDriverShort(id int, lastName, firstName, middleName string) (*DriverShort, error) {
+	if err := ValidateID(id); err != nil {
+		return nil, err
+	}
+	if err := ValidateName(lastName, "Фамилия"); err != nil {
+		return nil, err
+	}
+	if err := ValidateName(firstName, "Имя"); err != nil {
+		return nil, err
+	}
+	if err := ValidateName(middleName, "Отчество"); err != nil {
+		return nil, err
+	}
+
+	fRunes := []rune(firstName)
+	mRunes := []rune(middleName)
+	initials := fmt.Sprintf("%c.%c.", fRunes[0], mRunes[0])
+
+	return &DriverShort{
+		id:       id,
+		lastName: lastName,
+		initials: initials,
+	}, nil
+}
+
+func (ds *DriverShort) ID() int          { return ds.id }
+func (ds *DriverShort) LastName() string { return ds.lastName }
+func (ds *DriverShort) Initials() string { return ds.initials }
+
+func (ds *DriverShort) FullPrint() string {
+	return fmt.Sprintf("ID: %d | %s %s", ds.id, ds.lastName, ds.initials)
+}
