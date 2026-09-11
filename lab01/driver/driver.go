@@ -12,8 +12,7 @@ import (
 var nameRegex = regexp.MustCompile(`^[А-Яа-яЁёA-Za-z-]+$`)
 
 type Driver struct {
-	id         int
-	lastName   string
+	DriverShort            // встраивание
 	firstName  string
 	middleName string
 	experience int
@@ -56,32 +55,45 @@ func ValidateExperience(exp int) error {
 	return nil
 }
 
-func ValidateAll(id int, lastName, firstName, middleName string, exp int) error {
-	if err := ValidateID(id); err != nil {
-		return err
-	}
-	if err := ValidateName(lastName, "Фамилия"); err != nil {
-		return err
-	}
-	if err := ValidateName(firstName, "Имя"); err != nil {
-		return err
-	}
-	if err := ValidateName(middleName, "Отчество"); err != nil {
-		return err
-	}
-	if err := ValidateExperience(exp); err != nil {
-		return err
-	}
-	return nil
-}
+// func ValidateAll(id int, lastName, firstName, middleName string, exp int) error {
+// 	if err := ValidateID(id); err != nil {
+// 		return err
+// 	}
+// 	if err := ValidateName(lastName, "Фамилия"); err != nil {
+// 		return err
+// 	}
+// 	if err := ValidateName(firstName, "Имя"); err != nil {
+// 		return err
+// 	}
+// 	if err := ValidateName(middleName, "Отчество"); err != nil {
+// 		return err
+// 	}
+// 	if err := ValidateExperience(exp); err != nil {
+// 		return err
+// 	}
+// 	return nil
+// }
 
 // констрктор
 
 func NewDriver(id int, lastName, firstName, middleName string, exp int) (*Driver, error) {
-	if err := ValidateAll(id, lastName, firstName, middleName, exp); err != nil {
+	// создаем базовую 
+	short, err := NewDriverShort(id, lastName, firstName, middleName)
+	if err != nil {
 		return nil, err
 	}
-	return &Driver{id, lastName, firstName, middleName, exp}, nil
+
+	// валидируем специфичные для полного класса поля
+	if err := ValidateExperience(exp); err != nil {
+		return nil, err
+	}
+
+	return &Driver{
+		DriverShort: *short,
+		firstName:  firstName,
+		middleName: middleName,
+		experience: exp,
+	}, nil
 }
 
 // в гошке нет перегрузки в привычном виде поэтому вот так
@@ -115,8 +127,6 @@ func NewDriverFromJSON(jsonData []byte) (*Driver, error) {
 }
 
 // геттеры
-func (d *Driver) ID() int            { return d.id }
-func (d *Driver) LastName() string   { return d.lastName }
 func (d *Driver) FirstName() string  { return d.firstName }
 func (d *Driver) MiddleName() string { return d.middleName }
 func (d *Driver) Experience() int    { return d.experience }
@@ -148,7 +158,6 @@ func (d *Driver) Equals(other *Driver) bool {
 
 //8
 //----------------------------------------------------------------------------
-// --- Пункт 8: Краткая версия сущности Водитель ---
 
 type DriverShort struct {
 	id       int
