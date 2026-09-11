@@ -12,10 +12,10 @@ import (
 var nameRegex = regexp.MustCompile(`^[А-Яа-яЁёA-Za-z-]+$`)
 
 type Driver struct {
-	DriverShort            // встраивание
-	firstName  string
-	middleName string
-	experience int
+	DriverShort // встраивание
+	firstName   string
+	middleName  string
+	experience  int
 }
 
 // дтошка для джейсона
@@ -77,7 +77,7 @@ func ValidateExperience(exp int) error {
 // констрктор
 
 func NewDriver(id int, lastName, firstName, middleName string, exp int) (*Driver, error) {
-	// создаем базовую 
+	// создаем базовую
 	short, err := NewDriverShort(id, lastName, firstName, middleName)
 	if err != nil {
 		return nil, err
@@ -90,9 +90,9 @@ func NewDriver(id int, lastName, firstName, middleName string, exp int) (*Driver
 
 	return &Driver{
 		DriverShort: *short,
-		firstName:  firstName,
-		middleName: middleName,
-		experience: exp,
+		firstName:   firstName,
+		middleName:  middleName,
+		experience:  exp,
 	}, nil
 }
 
@@ -135,13 +135,6 @@ func (d *Driver) Experience() int    { return d.experience }
 // полная версия вывода
 func (d *Driver) FullPrint() string {
 	return fmt.Sprintf("Водитель [#%d]: %s %s %s, стаж: %d лет", d.id, d.lastName, d.firstName, d.middleName, d.experience)
-}
-
-// краткая версия вывода по инициалам
-func (d *Driver) ShortPrint() string {
-	fRunes := []rune(d.firstName)
-	mRunes := []rune(d.middleName)
-	return fmt.Sprintf("ID: %d | %s %c.%c.", d.id, d.lastName, fRunes[0], mRunes[0])
 }
 
 // сравнение объектов на равенство по содержимому полей
@@ -194,6 +187,6 @@ func (ds *DriverShort) ID() int          { return ds.id }
 func (ds *DriverShort) LastName() string { return ds.lastName }
 func (ds *DriverShort) Initials() string { return ds.initials }
 
-func (ds *DriverShort) FullPrint() string {
+func (ds *DriverShort) ShortPrint() string {
 	return fmt.Sprintf("ID: %d | %s %s", ds.id, ds.lastName, ds.initials)
 }

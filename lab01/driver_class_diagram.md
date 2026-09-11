@@ -21,7 +21,7 @@ classDiagram
         +FirstName() string
         +MiddleName() string
         +Experience() int
-        +String() string
+        +FullPrint() string
         +Equals(other) bool
     }
 
