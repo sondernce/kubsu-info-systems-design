@@ -28,4 +28,16 @@ func main() {
 		log.Fatal(err)
 	}
 	fmt.Println("из джейсона:", d2.LastName(), d2.FirstName())
+
+	d3, _ := driver.NewDriver(2, "Петров", "Пётр", "Петрович", 10)
+	fmt.Println("прост конструктор:", d3.LastName(), d3.FirstName())
+
+	//7
+	// вывод
+	fmt.Println("полный вывод (String):", d1.FullPrint())
+	fmt.Println("краткий вывод (ShortString):", d1.ShortPrint())
+
+	// Сравнение
+	fmt.Println("d1 равен d2?", d1.Equals(d2)) // true
+	fmt.Println("d1 равен d3?", d1.Equals(d3)) // false
 }

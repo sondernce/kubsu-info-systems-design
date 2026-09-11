@@ -1,12 +1,12 @@
 package driver
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	"regexp"
-	"strings"
 	"strconv"
-	"encoding/json"
+	"strings"
 )
 
 var nameRegex = regexp.MustCompile(`^[А-Яа-яЁёA-Za-z-]+$`)
@@ -37,7 +37,7 @@ func ValidateID(id int) error {
 	return nil
 }
 
-// универсальный валидатор для first/middle/last name 
+// универсальный валидатор для first/middle/last name
 func ValidateName(value, fieldName string) error {
 	trimmed := strings.TrimSpace(value)
 	if trimmed == "" {
@@ -104,6 +104,7 @@ func NewDriverFromString(s string) (*Driver, error) {
 
 	return NewDriver(id, parts[1], parts[2], parts[3], exp)
 }
+
 // перегрузка 2 создание из джейсончика
 func NewDriverFromJSON(jsonData []byte) (*Driver, error) {
 	var dto driverDTO
@@ -114,8 +115,33 @@ func NewDriverFromJSON(jsonData []byte) (*Driver, error) {
 }
 
 // геттеры
-func (d *Driver) ID() int          { return d.id }
+func (d *Driver) ID() int            { return d.id }
 func (d *Driver) LastName() string   { return d.lastName }
 func (d *Driver) FirstName() string  { return d.firstName }
 func (d *Driver) MiddleName() string { return d.middleName }
-func (d *Driver) Experience() int   { return d.experience }
+func (d *Driver) Experience() int    { return d.experience }
+
+// 7
+// полная версия вывода
+func (d *Driver) FullPrint() string {
+	return fmt.Sprintf("Водитель [#%d]: %s %s %s, стаж: %d лет", d.id, d.lastName, d.firstName, d.middleName, d.experience)
+}
+
+// краткая версия вывода по инициалам
+func (d *Driver) ShortPrint() string {
+	fRunes := []rune(d.firstName)
+	mRunes := []rune(d.middleName)
+	return fmt.Sprintf("ID: %d | %s %c.%c.", d.id, d.lastName, fRunes[0], mRunes[0])
+}
+
+// сравнение объектов на равенство по содержимому полей
+func (d *Driver) Equals(other *Driver) bool {
+	if other == nil {
+		return false
+	}
+	return d.id == other.id &&
+		d.lastName == other.lastName &&
+		d.firstName == other.firstName &&
+		d.middleName == other.middleName &&
+		d.experience == other.experience
+}
