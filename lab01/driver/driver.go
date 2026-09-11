@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"regexp"
 	"strings"
+	"strconv"
+	"encoding/json"
 )
 
 var nameRegex = regexp.MustCompile(`^[А-Яа-яЁёA-Za-z-]+$`)
@@ -15,6 +17,15 @@ type Driver struct {
 	firstName  string
 	middleName string
 	experience int
+}
+
+// дтошка для джейсона
+type driverDTO struct {
+	ID         int    `json:"id"`
+	LastName   string `json:"last_name"`
+	FirstName  string `json:"first_name"`
+	MiddleName string `json:"middle_name"`
+	Experience int    `json:"experience"`
 }
 
 // валидаторы
@@ -71,6 +82,35 @@ func NewDriver(id int, lastName, firstName, middleName string, exp int) (*Driver
 		return nil, err
 	}
 	return &Driver{id, lastName, firstName, middleName, exp}, nil
+}
+
+// в гошке нет перегрузки в привычном виде поэтому вот так
+// перегрузка 1 - создание из строки вида id;lastName;firstName;middleName;experience
+func NewDriverFromString(s string) (*Driver, error) {
+	parts := strings.Split(s, ";")
+	if len(parts) != 5 {
+		return nil, errors.New("неверный формат строки, ожидается 5 элементов через ';'")
+	}
+
+	id, err := strconv.Atoi(strings.TrimSpace(parts[0]))
+	if err != nil {
+		return nil, errors.New("некорректный ID")
+	}
+
+	exp, err := strconv.Atoi(strings.TrimSpace(parts[4]))
+	if err != nil {
+		return nil, errors.New("некорректный стаж")
+	}
+
+	return NewDriver(id, parts[1], parts[2], parts[3], exp)
+}
+// перегрузка 2 создание из джейсончика
+func NewDriverFromJSON(jsonData []byte) (*Driver, error) {
+	var dto driverDTO
+	if err := json.Unmarshal(jsonData, &dto); err != nil {
+		return nil, fmt.Errorf("ошибка парсинга JSON: %w", err)
+	}
+	return NewDriver(dto.ID, dto.LastName, dto.FirstName, dto.MiddleName, dto.Experience)
 }
 
 // геттеры
