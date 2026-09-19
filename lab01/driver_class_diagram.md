@@ -24,7 +24,7 @@ classDiagram
         -string middleName
         -int experience
         -string phoneNumber
-        +NewDriver(args ...interface{}) (*Driver, error)
+        +NewDriver(args ...interface) (*Driver, error)
         -newDriverFull(id, lastName, firstName, middleName, phoneNumber, exp) (*Driver, error)
         -newDriverFromString(s) (*Driver, error)
         -newDriverFromJSON(jsonData) (*Driver, error)
