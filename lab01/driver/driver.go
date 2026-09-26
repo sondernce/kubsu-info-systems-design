@@ -333,3 +333,16 @@ func (ds *DriverShort) Print() string {
 func (d *Driver) Print() string {
 	return d.FullPrint()
 }
+
+//9
+//----------------------------------------------------------------------------
+
+type DriverMapper struct{}
+
+func NewDriverMapper() *DriverMapper {
+	return &DriverMapper{}
+}
+
+func (m *DriverMapper) ToShort(d *Driver) *DriverShort {
+	return &d.DriverShort
+}
