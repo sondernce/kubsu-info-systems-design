@@ -1,0 +1,18 @@
+[
+  {
+    "id": 1,
+    "last_name": "Иванов",
+    "first_name": "Иван",
+    "middle_name": "Иванович",
+    "phone_number": "+79161234567",
+    "experience": 10
+  },
+  {
+    "id": 2,
+    "last_name": "Петров",
+    "first_name": "Пётр",
+    "middle_name": "Петрович",
+    "phone_number": "+79161234568",
+    "experience": 5
+  }
+]
