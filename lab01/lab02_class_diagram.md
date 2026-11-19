@@ -25,13 +25,13 @@ classDiagram
         +ToShort(d *Driver) *DriverShort
     }
 
-    class DriverRepJSON {
+    class driverFileRepository {
         -string path
         -drivers []*Driver
         -int lastID
         -mapper *DriverMapper
-        +ReadAll() error
-        +WriteAll() error
+        -readAll(decode) error
+        -writeAll(encode) error
         +GetByID(id int) (*Driver, error)
         +GetKNShortList(k int, n int) ([]*DriverShort, error)
         +SortByLastName()
@@ -41,20 +41,16 @@ classDiagram
         +GetCount() int
     }
 
-    class DriverRepYAML {
-        -string path
-        -drivers []*Driver
-        -int lastID
-        -mapper *DriverMapper
+    class DriverRepJSON {
+        -driverFileRepository driverFileRepository
         +ReadAll() error
         +WriteAll() error
-        +GetByID(id int) (*Driver, error)
-        +GetKNShortList(k int, n int) ([]*DriverShort, error)
-        +SortByLastName()
-        +Add(d *Driver) (int, error)
-        +Replace(id int, d *Driver) error
-        +Delete(id int) error
-        +GetCount() int
+    }
+
+    class DriverRepYAML {
+        -driverFileRepository driverFileRepository
+        +ReadAll() error
+        +WriteAll() error
     }
 
     class driverRecord {
@@ -67,19 +63,17 @@ classDiagram
     }
 
     Driver "1" *-- "1" DriverShort : встраивает
-    DriverRepJSON "1" *-- "0..*" Driver : хранит копии
-    DriverRepJSON "1" *-- "1" DriverMapper : использует
-    DriverRepJSON ..> driverRecord : читает и записывает JSON
-    DriverRepJSON ..> DriverShort : возвращает страницы
-    DriverRepYAML "1" *-- "0..*" Driver : хранит копии
-    DriverRepYAML "1" *-- "1" DriverMapper : использует
-    DriverRepYAML ..> driverRecord : читает и записывает YAML
-    DriverRepYAML ..> DriverShort : возвращает страницы
+    DriverRepJSON *-- driverFileRepository : встраивает
+    DriverRepYAML *-- driverFileRepository : встраивает
+    driverFileRepository "1" *-- "0..*" Driver : хранит копии
+    driverFileRepository "1" *-- "1" DriverMapper : использует
+    driverFileRepository ..> driverRecord : преобразует записи
+    driverFileRepository ..> DriverShort : возвращает страницы
     DriverMapper ..> Driver : принимает
     DriverMapper ..> DriverShort : возвращает указатель
 ```
 
-Диаграмма отражает пункты 1 и 2 ЛР2. Методы моделей первой лабораторной
+Диаграмма отражает пункты 1, 2 и 3 ЛР2. Методы моделей первой лабораторной
 показаны в сокращённом виде; полная диаграмма ЛР1 находится в
 [driver_class_diagram.md](driver_class_diagram.md).
 
@@ -87,12 +81,14 @@ classDiagram
 Это функции пакета `file`, возвращающие указатель на соответствующий тип
 и ошибку. Для загрузки файла нужно вызвать `ReadAll`.
 
-`driverRecord` содержит экспортируемые поля с JSON- и YAML-тегами. Оба
-репозитория используют эту структуру из `repository/file/record.go`. При загрузке
-каждая запись превращается в `Driver` через конструктор с валидацией.
+`DriverRepJSON` и `DriverRepYAML` встраивают `driverFileRepository`. Методы
+поиска, сортировки, пагинации и изменения списка определены в общем типе и
+доступны у обоих репозиториев. Это аналог наследования поведения через
+встраивание в Go. На диаграмме показана композиция.
 
-На этом этапе репозитории являются отдельными типами. Объединение в общую
-иерархию относится к пункту 3 ЛР2.
+Общий тип читает и записывает файл. Каждый репозиторий передаёт ему функции
+преобразования `driverRecord` в свой формат и обратно. При загрузке общий
+тип создаёт `Driver` через конструктор с валидацией.
 
 Маппер возвращает указатель на встроенную модель. Репозиторий копирует
 полученный `DriverShort`, чтобы изменение результата не затрагивало его список.

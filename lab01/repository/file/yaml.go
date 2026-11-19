@@ -5,22 +5,14 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"os"
-	"path/filepath"
-	"sort"
 	"strings"
 
 	"go.yaml.in/yaml/v3"
-
-	"transportation/driver"
 )
 
-// DriverRepYAML хранит рабочий список в памяти; ReadAll и WriteAll синхронизируют его с файлом.
+// DriverRepYAML читает и записывает список водителей в формате YAML.
 type DriverRepYAML struct {
-	path    string
-	drivers []*driver.Driver
-	lastID  int
-	mapper  *driver.DriverMapper
+	driverFileRepository
 }
 
 // NewDriverRepYAML создаёт пустой репозиторий. Загрузка выполняется через ReadAll.
@@ -28,182 +20,40 @@ func NewDriverRepYAML(path string) (*DriverRepYAML, error) {
 	if strings.TrimSpace(path) == "" {
 		return nil, errors.New("путь к YAML-файлу не может быть пустым")
 	}
-	return &DriverRepYAML{
-		path:    path,
-		drivers: make([]*driver.Driver, 0),
-		mapper:  driver.NewDriverMapper(),
-	}, nil
+	return &DriverRepYAML{driverFileRepository: newDriverFileRepository(path)}, nil
 }
 
 //a
 
 func (r *DriverRepYAML) ReadAll() error {
-	data, err := os.ReadFile(r.path)
-	if err != nil {
-		return fmt.Errorf("чтение водителей: %w", err)
-	}
-	var records []driverRecord
-	decoder := yaml.NewDecoder(bytes.NewReader(data))
-	decoder.KnownFields(true)
-	if err := decoder.Decode(&records); err != nil {
-		return fmt.Errorf("разбор YAML: %w", err)
-	}
-	if records == nil {
-		return errors.New("ожидается YAML-список водителей")
-	}
-
-	var extra yaml.Node
-	if err := decoder.Decode(&extra); err != io.EOF {
-		if err != nil {
-			return fmt.Errorf("разбор конца YAML: %w", err)
-		}
-		return errors.New("ожидается один YAML-документ со списком водителей")
-	}
-
-	drivers := make([]*driver.Driver, 0, len(records))
-	seen := make(map[int]bool, len(records))
-	lastID := r.lastID
-	for i, record := range records {
-		if seen[record.ID] {
-			return fmt.Errorf("повторяющийся ID водителя: %d", record.ID)
-		}
-		d, err := driver.NewDriver(record.ID, record.LastName, record.FirstName,
-			record.MiddleName, record.PhoneNumber, record.Experience)
-		if err != nil {
-			return fmt.Errorf("запись %d: %w", i+1, err)
-		}
-		seen[record.ID] = true
-		drivers = append(drivers, d)
-		if record.ID > lastID {
-			lastID = record.ID
-		}
-	}
-	// Заменяем список только после проверки всех записей.
-	r.drivers = drivers
-	r.lastID = lastID
-	return nil
+	return r.readAll(decodeYAML)
 }
 
 //b
 
 func (r *DriverRepYAML) WriteAll() error {
-	records := make([]driverRecord, 0, len(r.drivers))
-	for _, d := range r.drivers {
-		records = append(records, driverRecord{
-			ID: d.ID(), LastName: d.LastName(), FirstName: d.FirstName(),
-			MiddleName: d.MiddleName(), PhoneNumber: d.PhoneNumber(), Experience: d.Experience(),
-		})
-	}
-	data, err := yaml.Marshal(records)
-	if err != nil {
-		return fmt.Errorf("кодирование водителей: %w", err)
-	}
-	// Временный файл защищает предыдущие данные от частичной записи.
-	tmp, err := os.CreateTemp(filepath.Dir(r.path), ".drivers-*.yaml")
-	if err != nil {
-		return fmt.Errorf("создание временного файла: %w", err)
-	}
-	defer os.Remove(tmp.Name())
-	if _, err := tmp.Write(data); err != nil {
-		tmp.Close()
-		return fmt.Errorf("запись водителей: %w", err)
-	}
-	if err := tmp.Close(); err != nil {
-		return fmt.Errorf("закрытие временного файла: %w", err)
-	}
-	if err := os.Rename(tmp.Name(), r.path); err != nil {
-		return fmt.Errorf("сохранение водителей: %w", err)
-	}
-	return nil
-}
-
-//c
-
-func (r *DriverRepYAML) GetByID(id int) (*driver.Driver, error) {
-	for _, d := range r.drivers {
-		if d.ID() == id {
-			return copyDriver(d, id)
-		}
-	}
-	return nil, fmt.Errorf("%w: %d", ErrDriverNotFound, id)
-}
-
-//d
-
-func (r *DriverRepYAML) GetKNShortList(k, n int) ([]*driver.DriverShort, error) {
-	if k <= 0 || n <= 0 {
-		return nil, errors.New("номер страницы и её размер должны быть больше нуля")
-	}
-	result := make([]*driver.DriverShort, 0)
-	// Проверяем границы до умножения, чтобы избежать переполнения int.
-	if len(r.drivers) == 0 || k-1 > (len(r.drivers)-1)/n {
-		return result, nil
-	}
-	start := (k - 1) * n
-	size := min(n, len(r.drivers)-start)
-	for _, d := range r.drivers[start : start+size] {
-		short := *r.mapper.ToShort(d)
-		result = append(result, &short)
-	}
-	return result, nil
-}
-
-//e
-
-func (r *DriverRepYAML) SortByLastName() {
-	sort.SliceStable(r.drivers, func(i, j int) bool {
-		return strings.ToLower(r.drivers[i].LastName()) < strings.ToLower(r.drivers[j].LastName())
+	return r.writeAll(func(records []driverRecord) ([]byte, error) {
+		return yaml.Marshal(records)
 	})
 }
 
-//f
-
-func (r *DriverRepYAML) Add(d *driver.Driver) (int, error) {
-	if r.lastID == int(^uint(0)>>1) {
-		return 0, errors.New("закончились доступные ID")
+func decodeYAML(data []byte) ([]driverRecord, error) {
+	var records []driverRecord
+	decoder := yaml.NewDecoder(bytes.NewReader(data))
+	decoder.KnownFields(true)
+	if err := decoder.Decode(&records); err != nil {
+		return nil, fmt.Errorf("разбор YAML: %w", err)
 	}
-	id := r.lastID + 1
-	stored, err := copyDriver(d, id)
-	if err != nil {
-		return 0, err
+	if records == nil {
+		return nil, errors.New("ожидается YAML-список водителей")
 	}
-	r.drivers = append(r.drivers, stored)
-	r.lastID = id
-	return id, nil
-}
 
-//g
-
-func (r *DriverRepYAML) Replace(id int, d *driver.Driver) error {
-	for i, current := range r.drivers {
-		if current.ID() == id {
-			stored, err := copyDriver(d, id)
-			if err != nil {
-				return err
-			}
-			r.drivers[i] = stored
-			return nil
+	var extra yaml.Node
+	if err := decoder.Decode(&extra); err != io.EOF {
+		if err != nil {
+			return nil, fmt.Errorf("разбор конца YAML: %w", err)
 		}
+		return nil, errors.New("ожидается один YAML-документ со списком водителей")
 	}
-	return fmt.Errorf("%w: %d", ErrDriverNotFound, id)
-}
-
-//h
-
-func (r *DriverRepYAML) Delete(id int) error {
-	for i, d := range r.drivers {
-		if d.ID() == id {
-			copy(r.drivers[i:], r.drivers[i+1:])
-			r.drivers[len(r.drivers)-1] = nil
-			r.drivers = r.drivers[:len(r.drivers)-1]
-			return nil
-		}
-	}
-	return fmt.Errorf("%w: %d", ErrDriverNotFound, id)
-}
-
-//i
-
-func (r *DriverRepYAML) GetCount() int {
-	return len(r.drivers)
+	return records, nil
 }
