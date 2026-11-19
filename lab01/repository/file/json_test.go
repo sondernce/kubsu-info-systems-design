@@ -28,7 +28,10 @@ func newDriver(t *testing.T, name string) *driver.Driver {
 }
 
 func TestCRUDAndGeneratedIDs(t *testing.T) {
-	r := newRepository(t)
+	testFileRepositories(t, checkCRUDAndGeneratedIDs)
+}
+
+func checkCRUDAndGeneratedIDs(t *testing.T, r testDriverRepository) {
 	d := newDriver(t, "Иванов")
 	id, err := r.Add(d)
 	if err != nil || id != 1 || d.ID() != 99 {
@@ -82,7 +85,10 @@ func TestCRUDAndGeneratedIDs(t *testing.T) {
 }
 
 func TestSortAndPagination(t *testing.T) {
-	r := newRepository(t)
+	testFileRepositories(t, checkSortAndPagination)
+}
+
+func checkSortAndPagination(t *testing.T, r testDriverRepository) {
 	for _, name := range []string{"Сидоров", "Иванов", "Петров", "Абрамов", "Яковлев"} {
 		if _, err := r.Add(newDriver(t, name)); err != nil {
 			t.Fatal(err)

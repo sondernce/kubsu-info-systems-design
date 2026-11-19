@@ -22,15 +22,6 @@ type DriverRepJSON struct {
 	mapper  *driver.DriverMapper
 }
 
-type driverRecord struct {
-	ID          int    `json:"id"`
-	LastName    string `json:"last_name"`
-	FirstName   string `json:"first_name"`
-	MiddleName  string `json:"middle_name"`
-	PhoneNumber string `json:"phone_number"`
-	Experience  int    `json:"experience"`
-}
-
 // NewDriverRepJSON создаёт пустой репозиторий. Загрузка выполняется через ReadAll.
 func NewDriverRepJSON(path string) (*DriverRepJSON, error) {
 	if strings.TrimSpace(path) == "" {
