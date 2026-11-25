@@ -133,3 +133,27 @@ ID возвращают ошибку. Неудачная загрузка сох
 Создание моделей и проверка полей выполняются кодом первой лабораторной.
 
 Диаграмма классов ЛР2: [lab02_class_diagram.md](lab02_class_diagram.md).
+
+## Репозиторий PostgreSQL
+
+`repository/postgres/repository.go` содержит `DriverRepDB` с шестью операциями
+из пункта 4. Вызовы используют параметризованные SQL-запросы через `database/sql`.
+Страницы нумеруются с 1 и идут в порядке ID. ID новых записей назначает PostgreSQL.
+
+Из папки `lab01` примените миграцию к выбранной базе:
+
+```sh
+psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f migrations/001_create_drivers.sql
+```
+
+В Go подключите драйвер через побочный импорт
+`_ "github.com/jackc/pgx/v5/stdlib"`. Откройте пул вызовом
+`sql.Open("pgx", dsn)` и передайте его в `postgres.NewDriverRepDB(db)`.
+За закрытие пула отвечает код, который его открыл.
+
+Интеграционный тест использует временную таблицу и не меняет постоянные
+таблицы базы:
+
+```sh
+TEST_DATABASE_URL="$DATABASE_URL" go test -v ./repository/postgres
+```
