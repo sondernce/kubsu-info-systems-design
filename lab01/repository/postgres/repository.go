@@ -7,16 +7,17 @@ import (
 	"fmt"
 	"math"
 
+	"transportation/database"
 	"transportation/driver"
 )
 
 var ErrDriverNotFound = errors.New("водитель не найден")
 
 type DriverRepDB struct {
-	db *sql.DB
+	db *database.Database
 }
 
-func NewDriverRepDB(db *sql.DB) *DriverRepDB {
+func NewDriverRepDB(db *database.Database) *DriverRepDB {
 	return &DriverRepDB{db: db}
 }
 

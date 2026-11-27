@@ -54,13 +54,22 @@ classDiagram
     }
 
     class DriverRepDB {
-        -db *sql.DB
+        -db *Database
         +GetByID(ctx, id int) (*Driver, error)
         +GetKNShortList(ctx, k int, n int) ([]*DriverShort, error)
         +Add(ctx, d *Driver) (int, error)
         +Replace(ctx, id int, d *Driver) error
         +Delete(ctx, id int) error
         +GetCount(ctx) (int, error)
+    }
+
+    class Database {
+        <<Singleton>>
+        -pool *sql.DB
+        +QueryRowContext(ctx, query, args) *sql.Row
+        +QueryContext(ctx, query, args) (*sql.Rows, error)
+        +ExecContext(ctx, query, args) (sql.Result, error)
+        +Close() error
     }
 
     class SQLDB["sql.DB"]
@@ -81,14 +90,15 @@ classDiagram
     driverFileRepository "1" *-- "1" DriverMapper : использует
     driverFileRepository ..> driverRecord : преобразует записи
     driverFileRepository ..> DriverShort : возвращает страницы
-    DriverRepDB --> SQLDB : выполняет запросы
+    DriverRepDB --> Database : делегирует запросы
+    Database *-- SQLDB : управляет пулом
     DriverRepDB ..> Driver : читает и сохраняет
     DriverRepDB ..> DriverShort : возвращает страницы
     DriverMapper ..> Driver : принимает
     DriverMapper ..> DriverShort : возвращает указатель
 ```
 
-Диаграмма отражает пункты с 1 по 4 ЛР2. Методы моделей первой лабораторной
+Диаграмма отражает пункты с 1 по 5 ЛР2. Методы моделей первой лабораторной
 показаны в сокращённом виде; полная диаграмма ЛР1 находится в
 [driver_class_diagram.md](driver_class_diagram.md).
 
@@ -108,5 +118,7 @@ classDiagram
 Маппер возвращает указатель на встроенную модель. Репозиторий копирует
 полученный `DriverShort`, чтобы изменение результата не затрагивало его список.
 
-`NewDriverRepDB(db)` получает открытый вызывающим кодом пул `*sql.DB`.
-Идентификаторы новых записей назначает PostgreSQL.
+`database.GetDatabase(ctx, dsn)` открывает общий пул PostgreSQL и возвращает
+один экземпляр `Database` на процесс. `NewDriverRepDB(db)` принимает этот
+экземпляр. Репозиторий составляет SQL и преобразует результаты в модели.
+Выполнение запросов он делегирует `Database`.

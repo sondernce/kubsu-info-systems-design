@@ -1,14 +1,15 @@
 package postgres
 
 import (
-	"database/sql"
 	"errors"
 	"os"
 	"strings"
 	"testing"
 
-	_ "github.com/jackc/pgx/v5/stdlib"
+	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/stdlib"
 
+	"transportation/database"
 	"transportation/driver"
 )
 
@@ -18,13 +19,29 @@ func TestDriverRepDB(t *testing.T) {
 		t.Skip("задайте TEST_DATABASE_URL для проверки на PostgreSQL")
 	}
 	ctx := t.Context()
-	db, err := sql.Open("pgx", dsn)
+	config, err := pgx.ParseConfig(dsn)
+	if err != nil {
+		t.Fatal(err)
+	}
+	// Запросы теста должны видеть только временные таблицы.
+	config.RuntimeParams["search_path"] = "pg_temp"
+	testDSN := stdlib.RegisterConnConfig(config)
+	t.Cleanup(func() { stdlib.UnregisterConnConfig(testDSN) })
+	if _, err := database.GetDatabase(ctx, "port=invalid"); err == nil {
+		t.Fatal("ожидалась ошибка подключения")
+	}
+	db, err := database.GetDatabase(ctx, testDSN)
 	if err != nil {
 		t.Fatal(err)
 	}
 	defer db.Close()
-	// Временная таблица доступна только в соединении, которое её создало.
-	db.SetMaxOpenConns(1)
+	same, err := database.GetDatabase(ctx, testDSN)
+	if err != nil || same != db {
+		t.Fatalf("повторное получение Database: экземпляр совпадает=%t, ошибка=%v", same == db, err)
+	}
+	if _, err := database.GetDatabase(ctx, dsn); err == nil {
+		t.Fatal("ожидалась ошибка при смене строки подключения")
+	}
 	migration, err := os.ReadFile("../../migrations/001_create_drivers.sql")
 	if err != nil {
 		t.Fatal(err)
