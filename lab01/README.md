@@ -89,7 +89,7 @@ func example() error {
 
 Возвращаемые модели и страницы не дают менять внутренний список напрямую.
 Ошибку отсутствующего водителя можно проверить через
-`errors.Is(err, file.ErrDriverNotFound)`.
+`errors.Is(err, repository.ErrDriverNotFound)`.
 
 Репозиторий рассчитан на последовательные вызовы из одного процесса.
 
@@ -161,3 +161,22 @@ psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f migrations/001_create_drivers.sql
 ```sh
 TEST_DATABASE_URL="$DATABASE_URL" go test -v ./repository/postgres
 ```
+
+## Общий интерфейс репозиториев
+
+`repository.DriverRepository` объединяет шесть операций, доступных у JSON,
+YAML и PostgreSQL. Файловые операции `ReadAll`, `WriteAll` и
+`SortByLastName` доступны у файловых типов.
+
+Файловые репозитории можно передавать в функции, принимающие
+`repository.DriverRepository`, напрямую. Для PostgreSQL оберните
+`DriverRepDB` в адаптер:
+
+```go
+var repo repository.DriverRepository = postgres.NewDriverDBAdapter(ctx, postgres.NewDriverRepDB(db))
+count, err := repo.GetCount()
+```
+
+Контекст передаётся в каждый SQL-запрос. Создавайте адаптер на время жизни
+этого контекста. У всех реализаций `GetCount()` возвращает `(int, error)`.
+Для файлов ошибка подсчёта всегда равна `nil`.

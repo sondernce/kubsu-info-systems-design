@@ -17,7 +17,7 @@ type testDriverRepository interface {
 	Add(*driver.Driver) (int, error)
 	Replace(int, *driver.Driver) error
 	Delete(int) error
-	GetCount() int
+	GetCount() (int, error)
 }
 
 func newYAMLRepository(t *testing.T) *DriverRepYAML {
@@ -68,7 +68,7 @@ func TestYAMLRoundTrip(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if loaded.GetCount() != 2 || got.LastName() != d.LastName() ||
+	if countDrivers(t, loaded) != 2 || got.LastName() != d.LastName() ||
 		got.FirstName() != d.FirstName() || got.MiddleName() != d.MiddleName() ||
 		got.PhoneNumber() != d.PhoneNumber() || got.Experience() != d.Experience() ||
 		got.Initials() != "И.П." {
@@ -90,7 +90,7 @@ func TestYAMLRoundTrip(t *testing.T) {
 		t.Fatal(err)
 	}
 	got, err = r.GetByID(1)
-	if err != nil || got.LastName() != "Сидоров" || r.GetCount() != 2 {
+	if err != nil || got.LastName() != "Сидоров" || countDrivers(t, r) != 2 {
 		t.Fatalf("изменения не сохранились: %v, %v", got, err)
 	}
 	if _, err := r.GetByID(2); !errors.Is(err, ErrDriverNotFound) {
@@ -135,7 +135,7 @@ func TestYAMLReadErrorsPreserveState(t *testing.T) {
 			if err := r.ReadAll(); err == nil {
 				t.Fatalf("ожидалась ошибка для %q", data)
 			}
-			if r.GetCount() != 1 {
+			if countDrivers(t, r) != 1 {
 				t.Fatal("ошибочная загрузка изменила список")
 			}
 			if _, err := r.GetByID(1); err != nil {
@@ -168,4 +168,13 @@ func TestYAMLInvalidPath(t *testing.T) {
 	if err := r.WriteAll(); err == nil {
 		t.Fatal("запись в отсутствующую папку должна вернуть ошибку")
 	}
+}
+
+func countDrivers(t *testing.T, r testDriverRepository) int {
+	t.Helper()
+	count, err := r.GetCount()
+	if err != nil {
+		t.Fatal(err)
+	}
+	return count
 }

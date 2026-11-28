@@ -9,9 +9,10 @@ import (
 
 	"transportation/database"
 	"transportation/driver"
+	"transportation/repository"
 )
 
-var ErrDriverNotFound = errors.New("водитель не найден")
+var ErrDriverNotFound = repository.ErrDriverNotFound
 
 type DriverRepDB struct {
 	db *database.Database

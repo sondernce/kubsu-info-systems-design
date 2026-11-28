@@ -10,7 +10,7 @@ func main() {
 
 	d, _ := driver.NewDriver(1, "Иванов", "Иван", "Иванович", "+79161234567", 10)
 	fmt.Println(d)
-	short := d.ToShort() // указатель на общие данные
+	short := driver.NewDriverMapper().ToShort(d) // указатель на общие данные
 	fmt.Println(short)
 	fmt.Println(short.Initials()) // И.И.
 	d.SetFirstName("Пётр")        // пересчитывает initials внутри d.DriverShort

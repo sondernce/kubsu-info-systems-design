@@ -9,9 +9,15 @@ import (
 	"strings"
 
 	"transportation/driver"
+	"transportation/repository"
 )
 
-var ErrDriverNotFound = errors.New("водитель не найден")
+var ErrDriverNotFound = repository.ErrDriverNotFound
+
+var (
+	_ repository.DriverRepository = (*DriverRepJSON)(nil)
+	_ repository.DriverRepository = (*DriverRepYAML)(nil)
+)
 
 // driverFileRepository хранит список водителей и выполняет общие операции с файлом.
 type driverFileRepository struct {
@@ -187,8 +193,8 @@ func (r *driverFileRepository) Delete(id int) error {
 
 //i
 
-func (r *driverFileRepository) GetCount() int {
-	return len(r.drivers)
+func (r *driverFileRepository) GetCount() (int, error) {
+	return len(r.drivers), nil
 }
 
 // Копия не даёт вызывающему коду менять данные репозитория в обход его методов.

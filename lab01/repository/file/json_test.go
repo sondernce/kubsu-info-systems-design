@@ -55,13 +55,13 @@ func checkCRUDAndGeneratedIDs(t *testing.T, r testDriverRepository) {
 		t.Fatal(err)
 	}
 	got, err = r.GetByID(id)
-	if err != nil || got.ID() != id || got.LastName() != "Сидоров" || r.GetCount() != 1 {
-		t.Fatalf("Replace: %v, %v, count=%d", got, err, r.GetCount())
+	if err != nil || got.ID() != id || got.LastName() != "Сидоров" || countDrivers(t, r) != 1 {
+		t.Fatalf("Replace: %v, %v, count=%d", got, err, countDrivers(t, r))
 	}
 	if err := r.Delete(id); err != nil {
 		t.Fatal(err)
 	}
-	if r.GetCount() != 0 {
+	if countDrivers(t, r) != 0 {
 		t.Fatal("после удаления список должен быть пустым")
 	}
 	if _, err := r.GetByID(id); !errors.Is(err, ErrDriverNotFound) {
@@ -158,7 +158,7 @@ func TestJSONRoundTrip(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if loaded.GetCount() != 2 || got.LastName() != d.LastName() ||
+	if countDrivers(t, loaded) != 2 || got.LastName() != d.LastName() ||
 		got.FirstName() != d.FirstName() || got.MiddleName() != d.MiddleName() ||
 		got.PhoneNumber() != d.PhoneNumber() || got.Experience() != d.Experience() ||
 		got.Initials() != "И.П." {
@@ -185,7 +185,7 @@ func TestReadErrorsPreserveState(t *testing.T) {
 		if err := r.ReadAll(); err == nil {
 			t.Fatalf("ожидалась ошибка для %q", data)
 		}
-		if r.GetCount() != 1 {
+		if countDrivers(t, r) != 1 {
 			t.Fatal("ошибочная загрузка изменила список")
 		}
 		if _, err := r.GetByID(1); err != nil {

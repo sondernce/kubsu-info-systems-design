@@ -38,7 +38,7 @@ classDiagram
         +Add(d *Driver) (int, error)
         +Replace(id int, d *Driver) error
         +Delete(id int) error
-        +GetCount() int
+        +GetCount() (int, error)
     }
 
     class DriverRepJSON {
@@ -51,6 +51,27 @@ classDiagram
         -driverFileRepository driverFileRepository
         +ReadAll() error
         +WriteAll() error
+    }
+
+    class DriverRepository {
+        <<interface>>
+        +GetByID(id int) (*Driver, error)
+        +GetKNShortList(k int, n int) ([]*DriverShort, error)
+        +Add(d *Driver) (int, error)
+        +Replace(id int, d *Driver) error
+        +Delete(id int) error
+        +GetCount() (int, error)
+    }
+
+    class DriverDBAdapter {
+        -ctx context.Context
+        -repo *DriverRepDB
+        +GetByID(id int) (*Driver, error)
+        +GetKNShortList(k int, n int) ([]*DriverShort, error)
+        +Add(d *Driver) (int, error)
+        +Replace(id int, d *Driver) error
+        +Delete(id int) error
+        +GetCount() (int, error)
     }
 
     class DriverRepDB {
@@ -90,6 +111,10 @@ classDiagram
     driverFileRepository "1" *-- "1" DriverMapper : использует
     driverFileRepository ..> driverRecord : преобразует записи
     driverFileRepository ..> DriverShort : возвращает страницы
+    DriverRepJSON ..|> DriverRepository
+    DriverRepYAML ..|> DriverRepository
+    DriverDBAdapter ..|> DriverRepository
+    DriverDBAdapter --> DriverRepDB : передаёт контекст и вызовы
     DriverRepDB --> Database : делегирует запросы
     Database *-- SQLDB : управляет пулом
     DriverRepDB ..> Driver : читает и сохраняет
@@ -98,7 +123,7 @@ classDiagram
     DriverMapper ..> DriverShort : возвращает указатель
 ```
 
-Диаграмма отражает пункты с 1 по 5 ЛР2. Методы моделей первой лабораторной
+Диаграмма отражает пункты с 1 по 6 ЛР2. Методы моделей первой лабораторной
 показаны в сокращённом виде; полная диаграмма ЛР1 находится в
 [driver_class_diagram.md](driver_class_diagram.md).
 
@@ -122,3 +147,7 @@ classDiagram
 один экземпляр `Database` на процесс. `NewDriverRepDB(db)` принимает этот
 экземпляр. Репозиторий составляет SQL и преобразует результаты в модели.
 Выполнение запросов он делегирует `Database`.
+
+`DriverRepJSON` и `DriverRepYAML` реализуют `DriverRepository` через методы
+встроенного типа. `DriverDBAdapter` реализует тот же интерфейс и передаёт
+контекст из конструктора в каждый вызов `DriverRepDB`.
