@@ -11,8 +11,7 @@ go test ./...
 go vet ./...
 ```
 
-`main.go` демонстрирует модели ЛР1. Проверки репозиториев находятся в
-`repository/file/json_test.go` и `repository/file/yaml_test.go`.
+`main.go` демонстрирует модели ЛР1.
 
 ## JSON-репозиторий
 
@@ -155,13 +154,6 @@ psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f migrations/001_create_drivers.sql
 подключения можно повторить попытку. Вызывайте `db.Close()` при завершении
 программы. После закрытия общий пул больше недоступен в этом процессе.
 
-Интеграционный тест использует временную таблицу и не меняет постоянные
-таблицы базы:
-
-```sh
-TEST_DATABASE_URL="$DATABASE_URL" go test -v ./repository/postgres
-```
-
 ## Общий интерфейс репозиториев
 
 `repository.DriverRepository` объединяет шесть операций, доступных у JSON,
@@ -239,3 +231,16 @@ page, err := view.GetKNShortList(1, 20)
 считает записи по тому же фильтру. Сортировка выполняется на отдельной
 выборке и сохраняет порядок исходного списка и файла. Чтение, запись
 и операции по ID выполняет обёрнутый репозиторий.
+
+## Форматирование и линтеры
+
+Установите [golangci-lint v2](https://golangci-lint.run/docs/welcome/install/local/).
+Конфигурация включает `errcheck`, `govet`, `ineffassign`, `staticcheck`
+и `unused`. Для форматирования используется `gofmt`.
+
+Из папки `lab01` выполните:
+
+```sh
+make fmt    # форматирует Go-файлы
+make check  # запускает линтеры и go test
+```

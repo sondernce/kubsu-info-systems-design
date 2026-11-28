@@ -47,8 +47,7 @@ func GetDatabase(ctx context.Context, dsn string) (*Database, error) {
 		return nil, fmt.Errorf("открытие пула PostgreSQL: %w", err)
 	}
 	if err := pool.PingContext(ctx); err != nil {
-		pool.Close()
-		return nil, fmt.Errorf("подключение к PostgreSQL: %w", err)
+		return nil, fmt.Errorf("подключение к PostgreSQL: %w", errors.Join(err, pool.Close()))
 	}
 
 	instance = &Database{pool: pool}

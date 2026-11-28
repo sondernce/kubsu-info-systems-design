@@ -69,7 +69,10 @@ func (r *DriverRepDB) getKNShortList(ctx context.Context, k, n int, filter Drive
 	if err != nil {
 		return nil, fmt.Errorf("получение страницы водителей: %w", err)
 	}
-	defer rows.Close()
+	defer func() {
+		// При полном обходе результат закрывается автоматически, ошибка доступна в Rows.Err.
+		_ = rows.Close()
+	}()
 
 	result := make([]*driver.DriverShort, 0)
 	for rows.Next() {

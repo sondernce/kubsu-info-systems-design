@@ -92,10 +92,12 @@ func (r *driverFileRepository) writeAll(encode func([]driverRecord) ([]byte, err
 	if err != nil {
 		return fmt.Errorf("создание временного файла: %w", err)
 	}
-	defer os.Remove(tmp.Name())
+	defer func() {
+		// После успешного переименования временного файла уже нет.
+		_ = os.Remove(tmp.Name())
+	}()
 	if _, err := tmp.Write(data); err != nil {
-		tmp.Close()
-		return fmt.Errorf("запись водителей: %w", err)
+		return fmt.Errorf("запись водителей: %w", errors.Join(err, tmp.Close()))
 	}
 	if err := tmp.Close(); err != nil {
 		return fmt.Errorf("закрытие временного файла: %w", err)
