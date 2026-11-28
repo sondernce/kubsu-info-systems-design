@@ -10,58 +10,12 @@ func main() {
 
 	d, _ := driver.NewDriver(1, "Иванов", "Иван", "Иванович", "+79161234567", 10)
 	fmt.Println(d)
-	short := driver.NewDriverMapper().ToShort(d) // указатель на общие данные
+	mapper := driver.NewDriverMapper()
+	short := mapper.ToShort(d) // указатель на общие данные
 	fmt.Println(short)
 	fmt.Println(short.Initials()) // И.И.
 	d.SetFirstName("Пётр")        // пересчитывает initials внутри d.DriverShort
 	fmt.Println(short.Initials()) // П.И. - изменилось само собой
 	fmt.Println(d)
-	
-		// // доступ к полям только через геттеры
-	// // d.id или d.lastName - ошибка если вне пакета driver
-	// var d driver.Driver
 
-	// fmt.Println("ID:", d.ID())
-	// fmt.Println("Фамилия:", d.LastName())
-
-	// из строки
-	// d1, err := driver.NewDriver("1;Иванов;Иван;Иванович;+79956127674;23")
-	// if err != nil {
-	// 	log.Fatal(err)
-	// }
-	// fmt.Println("из строки:", d1)
-	// fmt.Println("из строки:", d1.LastName())
-	// d1.SetLastName("Кириллов")
-	// fmt.Println("из строки:", d1)
-
-	// fmt.Println("короткая версия:", d1.ShortPrint())
-
-	// d3, _ := driver.NewDriver(2, "Петров","+79956127674")
-	// fmt.Println("прост конструктор:", d3)
-	
-
-	// //short, err := driver.NewDriverShort(4, "Кузнецов", "Алексей", "Алексеевич")
-	// if err != nil {
-	// 	log.Fatal(err)
-	// }
-	// fmt.Println("короткая версия:", short.ShortPrint())
-	// // из джейсона
-	// jsonBytes := []byte(`{"id": 2, "last_name": "Петров", "first_name": "Пётр", "middle_name": "Петрович", "phone_number": "+79956127767", "experience": 10}`)
-	// d2, err := driver.NewDriver(jsonBytes)
-	// if err != nil {
-	// 	log.Fatal(err)
-	// }
-	// fmt.Println("из джейсона:", d2)
-
-	// d3, _ := driver.NewDriver(2, "Петров", "Пётр", "Петрович", 10)
-	// fmt.Println("прост конструктор:", d3.LastName(), d3.FirstName())
-
-	// //7
-	// // вывод
-	// fmt.Println("полный вывод (String):", d1.FullPrint())
-	// fmt.Println("краткий вывод (ShortString):", d1.ShortPrint())
-
-	// // Сравнение
-	// fmt.Println("d1 равен d2?", d1.Equals(d2)) // true
-	// fmt.Println("d1 равен d3?", d1.Equals(d3)) // false
 }

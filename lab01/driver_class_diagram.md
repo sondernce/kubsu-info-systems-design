@@ -19,7 +19,7 @@ classDiagram
     }
 
     class Driver {
-        -DriverShort short
+        +DriverShort DriverShort
         -string firstName
         -string middleName
         -int experience
@@ -36,12 +36,31 @@ classDiagram
         +SetMiddleName(middleName) error
         +SetExperience(exp) error
         +SetPhoneNumber(phoneNumber) error
+        -recalcInitials()
         +FullPrint() string
         +Print() string
         +Equals(other) bool
     }
 
+    class DriverMapper {
+        +NewDriverMapper() *DriverMapper
+        +ToShort(d *Driver) *DriverShort
+    }
+
     Driver *-- DriverShort : embeds (composition)
     DriverShort ..|> Printer : realizes
     Driver ..|> Printer : realizes (переопределяет)
+    DriverMapper ..> Driver : принимает
+    DriverMapper ..> DriverShort : возвращает указатель
 ```
+
+`DriverMapper.ToShort(d)` возвращает `&d.DriverShort` — указатель на встроенную
+краткую модель, а не копию. Поэтому изменение имени или отчества через сеттеры
+`Driver` обновляет инициалы и в ранее полученном `DriverShort`.
+
+`DriverShort` встроен в `Driver` как экспортируемое поле без отдельного имени
+`short`. Преобразование `ToShort` принадлежит мапперу, а не `Driver`.
+
+Функции создания (`NewDriver`, `NewDriverShort`, `NewDriverMapper` и
+`newDriver…`) показаны рядом с соответствующими типами для удобства чтения;
+в Go это функции пакета `driver`, а не методы структур.
