@@ -212,3 +212,30 @@ page, err := repo.GetKNShortList(1, 20)
 `GetCount` учитывает фильтр для всего списка. `GetKNShortList` применяет
 фильтр и сортировку до выбора страницы. Остальные операции делегируются
 адаптеру.
+
+## Фильтрация и сортировка JSON и YAML
+
+`file.NewDriverFileDecorator` принимает JSON- или YAML-репозиторий и
+настройки из пакета `repository`. Например, чтобы на странице сначала шли
+водители с наибольшим стажем:
+
+```go
+view, err := file.NewDriverFileDecorator(
+    jsonRepo,
+    repository.DriverFilter{LastName: "Петров", MinExperience: 5},
+    repository.DriverSort{Field: repository.SortByExperience, Descending: true},
+)
+if err != nil {
+    return err
+}
+count, err := view.GetCount()
+if err != nil {
+    return err
+}
+page, err := view.GetKNShortList(1, 20)
+```
+
+Декоратор применяет настройки к текущему списку в памяти. `GetCount`
+считает записи по тому же фильтру. Сортировка выполняется на отдельной
+выборке и сохраняет порядок исходного списка и файла. Чтение, запись
+и операции по ID выполняет обёрнутый репозиторий.

@@ -120,17 +120,25 @@ func (r *driverFileRepository) GetByID(id int) (*driver.Driver, error) {
 //d
 
 func (r *driverFileRepository) GetKNShortList(k, n int) ([]*driver.DriverShort, error) {
+	return r.shortPage(r.drivers, k, n)
+}
+
+func (r *driverFileRepository) fileBase() *driverFileRepository {
+	return r
+}
+
+func (r *driverFileRepository) shortPage(drivers []*driver.Driver, k, n int) ([]*driver.DriverShort, error) {
 	if k <= 0 || n <= 0 {
 		return nil, errors.New("номер страницы и её размер должны быть больше нуля")
 	}
 	result := make([]*driver.DriverShort, 0)
 	// Проверяем границы до умножения, чтобы избежать переполнения int.
-	if len(r.drivers) == 0 || k-1 > (len(r.drivers)-1)/n {
+	if len(drivers) == 0 || k-1 > (len(drivers)-1)/n {
 		return result, nil
 	}
 	start := (k - 1) * n
-	size := min(n, len(r.drivers)-start)
-	for _, d := range r.drivers[start : start+size] {
+	size := min(n, len(drivers)-start)
+	for _, d := range drivers[start : start+size] {
 		short := *r.mapper.ToShort(d)
 		result = append(result, &short)
 	}

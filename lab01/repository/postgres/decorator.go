@@ -9,24 +9,15 @@ import (
 	"transportation/repository"
 )
 
-// DriverFilter ограничивает выборку по точной фамилии и минимальному стажу.
-type DriverFilter struct {
-	LastName      string
-	MinExperience int
-}
-
-type SortField uint8
+type DriverFilter = repository.DriverFilter
+type SortField = repository.SortField
+type DriverSort = repository.DriverSort
 
 const (
-	SortByID SortField = iota
-	SortByLastName
-	SortByExperience
+	SortByID         = repository.SortByID
+	SortByLastName   = repository.SortByLastName
+	SortByExperience = repository.SortByExperience
 )
-
-type DriverSort struct {
-	Field      SortField
-	Descending bool
-}
 
 var _ repository.DriverRepository = (*DriverDBDecorator)(nil)
 

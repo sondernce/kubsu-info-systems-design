@@ -74,6 +74,22 @@ classDiagram
         +GetCount() (int, error)
     }
 
+    class DriverFileDecorator {
+        -repo fileDriverRepository
+        -filter DriverFilter
+        -sorting DriverSort
+        +GetKNShortList(k int, n int) ([]*DriverShort, error)
+        +GetCount() (int, error)
+    }
+
+    class fileDriverRepository {
+        <<interface>>
+        +ReadAll() error
+        +WriteAll() error
+        +SortByLastName()
+        -fileBase() *driverFileRepository
+    }
+
     class DriverDBDecorator {
         -filter DriverFilter
         -orderBy string
@@ -131,6 +147,13 @@ classDiagram
     DriverRepJSON ..|> DriverRepository
     DriverRepYAML ..|> DriverRepository
     DriverDBAdapter ..|> DriverRepository
+    DriverFileDecorator ..|> DriverRepository
+    DriverFileDecorator --> fileDriverRepository : оборачивает
+    fileDriverRepository --|> DriverRepository : встраивает интерфейс
+    DriverRepJSON ..|> fileDriverRepository
+    DriverRepYAML ..|> fileDriverRepository
+    DriverFileDecorator --> DriverFilter : хранит фильтр
+    DriverFileDecorator --> DriverSort : хранит порядок
     DriverDBDecorator ..|> DriverRepository
     DriverDBDecorator --> DriverDBAdapter : оборачивает
     DriverDBDecorator --> DriverFilter : хранит фильтр
@@ -145,7 +168,7 @@ classDiagram
     DriverMapper ..> DriverShort : возвращает указатель
 ```
 
-Диаграмма отражает пункты с 1 по 7 ЛР2. Методы моделей первой лабораторной
+Диаграмма отражает пункты с 1 по 8 ЛР2. Методы моделей первой лабораторной
 показаны в сокращённом виде; полная диаграмма ЛР1 находится в
 [driver_class_diagram.md](driver_class_diagram.md).
 
@@ -178,3 +201,8 @@ classDiagram
 `GetKNShortList` и `GetCount`. Остальные вызовы выполняет адаптер.
 PostgreSQL применяет фильтр и сортировку перед выбором страницы.
 Счётчик использует тот же фильтр.
+
+`DriverFileDecorator` оборачивает JSON- или YAML-репозиторий. Он вычисляет
+страницы по текущему списку в памяти. Сортировка выдачи сохраняет исходный
+порядок списка в репозитории. Настройки фильтра и сортировки общие для
+файлового декоратора и декоратора PostgreSQL.
