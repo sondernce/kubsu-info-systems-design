@@ -180,3 +180,35 @@ count, err := repo.GetCount()
 Контекст передаётся в каждый SQL-запрос. Создавайте адаптер на время жизни
 этого контекста. У всех реализаций `GetCount()` возвращает `(int, error)`.
 Для файлов ошибка подсчёта всегда равна `nil`.
+
+## Фильтрация и сортировка PostgreSQL
+
+`NewDriverDBDecorator` оборачивает адаптер и возвращает реализацию
+`repository.DriverRepository`. Например, следующая настройка выбирает
+водителей с фамилией Петров и стажем от пяти лет, начиная с самых опытных.
+
+```go
+repo, err := postgres.NewDriverDBDecorator(
+    postgres.NewDriverDBAdapter(ctx, postgres.NewDriverRepDB(db)),
+    postgres.DriverFilter{LastName: "Петров", MinExperience: 5},
+    postgres.DriverSort{Field: postgres.SortByExperience, Descending: true},
+)
+if err != nil {
+    return err
+}
+
+count, err := repo.GetCount()
+if err != nil {
+    return err
+}
+page, err := repo.GetKNShortList(1, 20)
+```
+
+Поле `LastName` задаёт точное совпадение. Пустая фамилия и нулевой
+минимальный стаж оставляют все записи в выборке. Можно сортировать по ID,
+фамилии или стажу в обоих направлениях. При равенстве фамилий или стажа
+записи идут по ID по возрастанию, чтобы порядок страниц был стабильным.
+
+`GetCount` учитывает фильтр для всего списка. `GetKNShortList` применяет
+фильтр и сортировку до выбора страницы. Остальные операции делегируются
+адаптеру.

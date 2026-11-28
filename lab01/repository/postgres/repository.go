@@ -46,9 +46,15 @@ func (r *DriverRepDB) GetByID(ctx context.Context, id int) (*driver.Driver, erro
 	return d, nil
 }
 
+const driverFilterClause = " WHERE experience >= $1 AND ($2 = '' OR last_name = $2)"
+
 //b
 
 func (r *DriverRepDB) GetKNShortList(ctx context.Context, k, n int) ([]*driver.DriverShort, error) {
+	return r.getKNShortList(ctx, k, n, DriverFilter{}, "id ASC")
+}
+
+func (r *DriverRepDB) getKNShortList(ctx context.Context, k, n int, filter DriverFilter, orderBy string) ([]*driver.DriverShort, error) {
 	if k <= 0 || n <= 0 {
 		return nil, errors.New("номер страницы и её размер должны быть больше нуля")
 	}
@@ -57,10 +63,9 @@ func (r *DriverRepDB) GetKNShortList(ctx context.Context, k, n int) ([]*driver.D
 	}
 	offset := int64(k-1) * int64(n)
 
-	const query = `
-		SELECT id, last_name, first_name, middle_name
-		FROM drivers ORDER BY id LIMIT $1 OFFSET $2`
-	rows, err := r.db.QueryContext(ctx, query, n, offset)
+	query := "SELECT id, last_name, first_name, middle_name FROM drivers" +
+		driverFilterClause + " ORDER BY " + orderBy + " LIMIT $3 OFFSET $4"
+	rows, err := r.db.QueryContext(ctx, query, filter.MinExperience, filter.LastName, n, offset)
 	if err != nil {
 		return nil, fmt.Errorf("получение страницы водителей: %w", err)
 	}
@@ -136,8 +141,13 @@ func (r *DriverRepDB) Delete(ctx context.Context, id int) error {
 //f
 
 func (r *DriverRepDB) GetCount(ctx context.Context) (int, error) {
+	return r.getCount(ctx, DriverFilter{})
+}
+
+func (r *DriverRepDB) getCount(ctx context.Context, filter DriverFilter) (int, error) {
+	const query = "SELECT COUNT(*) FROM drivers" + driverFilterClause
 	var count int
-	if err := r.db.QueryRowContext(ctx, "SELECT COUNT(*) FROM drivers").Scan(&count); err != nil {
+	if err := r.db.QueryRowContext(ctx, query, filter.MinExperience, filter.LastName).Scan(&count); err != nil {
 		return 0, fmt.Errorf("подсчёт водителей: %w", err)
 	}
 	return count, nil

@@ -74,6 +74,23 @@ classDiagram
         +GetCount() (int, error)
     }
 
+    class DriverDBDecorator {
+        -filter DriverFilter
+        -orderBy string
+        +GetKNShortList(k int, n int) ([]*DriverShort, error)
+        +GetCount() (int, error)
+    }
+
+    class DriverFilter {
+        +string LastName
+        +int MinExperience
+    }
+
+    class DriverSort {
+        +SortField Field
+        +bool Descending
+    }
+
     class DriverRepDB {
         -db *Database
         +GetByID(ctx, id int) (*Driver, error)
@@ -114,6 +131,11 @@ classDiagram
     DriverRepJSON ..|> DriverRepository
     DriverRepYAML ..|> DriverRepository
     DriverDBAdapter ..|> DriverRepository
+    DriverDBDecorator ..|> DriverRepository
+    DriverDBDecorator --> DriverDBAdapter : оборачивает
+    DriverDBDecorator --> DriverFilter : хранит фильтр
+    DriverDBDecorator ..> DriverSort : принимает при создании
+    DriverDBDecorator ..> DriverRepDB : запрашивает выборку с фильтром
     DriverDBAdapter --> DriverRepDB : передаёт контекст и вызовы
     DriverRepDB --> Database : делегирует запросы
     Database *-- SQLDB : управляет пулом
@@ -123,7 +145,7 @@ classDiagram
     DriverMapper ..> DriverShort : возвращает указатель
 ```
 
-Диаграмма отражает пункты с 1 по 6 ЛР2. Методы моделей первой лабораторной
+Диаграмма отражает пункты с 1 по 7 ЛР2. Методы моделей первой лабораторной
 показаны в сокращённом виде; полная диаграмма ЛР1 находится в
 [driver_class_diagram.md](driver_class_diagram.md).
 
@@ -151,3 +173,8 @@ classDiagram
 `DriverRepJSON` и `DriverRepYAML` реализуют `DriverRepository` через методы
 встроенного типа. `DriverDBAdapter` реализует тот же интерфейс и передаёт
 контекст из конструктора в каждый вызов `DriverRepDB`.
+
+`DriverDBDecorator` оборачивает `DriverDBAdapter` и меняет поведение
+`GetKNShortList` и `GetCount`. Остальные вызовы выполняет адаптер.
+PostgreSQL применяет фильтр и сортировку перед выбором страницы.
+Счётчик использует тот же фильтр.
